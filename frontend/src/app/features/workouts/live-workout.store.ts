@@ -350,24 +350,26 @@ export class LiveWorkoutStore {
     }
 
     const now = Date.now();
-    // Plan exercises don't carry trackingType yet — default to WEIGHT_REPS.
-    // The ExercisePicker path is the recommended entry point for non-weight exercises.
-    const exercises: WorkoutExercise[] = planExercises.map((pe) => ({
-      id: crypto.randomUUID(),
-      exerciseId: pe.exerciseId,
-      name: pe.exerciseName,
-      target: '',
-      equipment: '',
-      trackingType: 'WEIGHT_REPS' as TrackingType,
-      previous: [],
-      bestSet: null,
-      sets: pe.sets.map((s, i) =>
-        this.createWorkoutSet(i + 1, 'WEIGHT_REPS', {
-          reps: s.reps,
-          weight: defaultWeight(this.weightUnit()),
-        })
-      ),
-    }));
+    const exercises: WorkoutExercise[] = planExercises.map((pe) => {
+      const trackingType = pe.trackingType ?? 'WEIGHT_REPS';
+      return {
+        id: crypto.randomUUID(),
+        exerciseId: pe.exerciseId,
+        name: pe.exerciseName,
+        target: '',
+        equipment: '',
+        trackingType,
+        previous: [],
+        bestSet: null,
+        sets: pe.sets.map((s, i) =>
+          this.createWorkoutSet(i + 1, trackingType, {
+            reps: s.reps ?? null,
+            weight: trackingType === 'WEIGHT_REPS' ? defaultWeight(this.weightUnit()) : null,
+            durationSeconds: s.durationSeconds ?? undefined,
+          })
+        ),
+      };
+    });
 
     const workout: LiveWorkout = {
       id: crypto.randomUUID(),

@@ -4,7 +4,7 @@
       <option value="$PROJECT_DIR$/backend/.env" />
     </option>
     <option name="MAIN_CLASS_NAME" value="com.liftorium.LiftoriumApplication" />
-    <module name="gym-helper-backend" />
+    <module name="liftorium-backend" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backend" />
     <method v="2">
       <option name="Make" enabled="true" />

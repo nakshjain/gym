@@ -365,6 +365,24 @@ export class LiveWorkoutPageComponent implements OnInit, OnDestroy {
     return val % 1 === 0 ? val.toString() : val.toFixed(2);
   }
 
+  /** Converts stored seconds to a rounded minute value for display in the input. */
+  protected durationToMinutes(seconds: number | null): number {
+    if (!seconds) return 0;
+    return Math.round(seconds / 60);
+  }
+
+  /**
+   * Called when the duration input changes (value is in minutes).
+   * Converts to seconds and delegates to the store.
+   */
+  protected setDurationFromMinutes(exerciseId: string, setId: string, event: Event): void {
+    const raw = event.target instanceof HTMLInputElement ? event.target.value : '';
+    const minutes = Number(raw);
+    if (!Number.isFinite(minutes) || minutes < 0) return;
+    // Store always keeps seconds internally
+    this.store.setValue(exerciseId, setId, 'durationSeconds', String(Math.round(minutes * 60)));
+  }
+
   /**
    * Returns a Tailwind grid-cols class string based on tracking type.
    * Used by both the column header row and each set row.
@@ -374,7 +392,7 @@ export class LiveWorkoutPageComponent implements OnInit, OnDestroy {
       case 'WEIGHT_REPS': return 'grid-cols-[2rem_1fr_1fr_2.75rem]';
       case 'REPS_ONLY':   return 'grid-cols-[2rem_1fr_2.75rem]';
       case 'DURATION':    return 'grid-cols-[2rem_1fr_2.75rem]';
-      case 'CARDIO':      return 'grid-cols-[2rem_1fr_1fr_1fr_2.75rem]';
+      case 'CARDIO':      return 'grid-cols-[2rem_1fr_1fr_2.75rem]';
     }
   }
 
