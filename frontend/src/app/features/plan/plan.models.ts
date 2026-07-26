@@ -1,3 +1,7 @@
+import type { TrackingType } from '../exercises/exercise.models';
+
+export type { TrackingType };
+
 export type MuscleGroup =
   | 'Chest'
   | 'Back'
@@ -14,13 +18,20 @@ export const MUSCLE_GROUPS: MuscleGroup[] = [
 
 export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+/**
+ * A planned set. Which field is set depends on the exercise's trackingType:
+ * - WEIGHT_REPS / REPS_ONLY → reps
+ * - DURATION / CARDIO       → durationSeconds
+ */
 export type PlanSet = {
-  reps: number;
+  reps: number | null;
+  durationSeconds: number | null;
 };
 
 export type PlanExercise = {
   exerciseId: string;
   exerciseName: string;
+  trackingType: TrackingType;
   sets: PlanSet[];
   order: number;
 };

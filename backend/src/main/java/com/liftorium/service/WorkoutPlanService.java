@@ -11,6 +11,7 @@ import com.liftorium.dto.PlanDtos.WorkoutPlanDto;
 import com.liftorium.entity.PlanDay;
 import com.liftorium.entity.PlanExercise;
 import com.liftorium.entity.PlanSet;
+import com.liftorium.entity.TrackingType;
 import com.liftorium.entity.WorkoutPlan;
 import com.liftorium.repository.WorkoutPlanRepository;
 import java.util.List;
@@ -94,8 +95,12 @@ public class WorkoutPlanService {
         .map(r -> PlanExercise.builder()
             .exerciseId(r.exerciseId())
             .exerciseName(r.exerciseName())
+            .trackingType(r.trackingType() != null ? r.trackingType() : TrackingType.WEIGHT_REPS)
             .sets(r.sets().stream()
-                .map(s -> PlanSet.builder().reps(s.reps()).build())
+                .map(s -> PlanSet.builder()
+                    .reps(s.reps())
+                    .durationSeconds(s.durationSeconds())
+                    .build())
                 .toList())
             .order(r.order())
             .build())
@@ -123,9 +128,10 @@ public class WorkoutPlanService {
                     e.getExerciseId(),
                     e.getExerciseName(),
                     e.getSets() == null ? List.of() : e.getSets().stream()
-                        .map(s -> new PlanSetDto(s.getReps()))
+                        .map(s -> new PlanSetDto(s.getReps(), s.getDurationSeconds()))
                         .toList(),
-                    e.getOrder()))
+                    e.getOrder(),
+                    e.getTrackingType() != null ? e.getTrackingType() : TrackingType.WEIGHT_REPS))
                 .toList(),
             d.isRest()))
         .toList();

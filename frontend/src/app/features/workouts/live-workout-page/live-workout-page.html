@@ -232,7 +232,13 @@
                 @for (exercise of selectedDay().exercises; track exercise.exerciseId) {
                   <div class="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 px-3 py-2.5">
                     <span class="truncate text-sm font-medium text-zinc-200">{{ exercise.exerciseName }}</span>
-                    <span class="shrink-0 text-[11px] font-medium text-zinc-500">{{ exercise.sets.length }} sets</span>
+                    <span class="shrink-0 text-[11px] font-medium text-zinc-500">
+                      @if (exercise.trackingType === 'CARDIO' || exercise.trackingType === 'DURATION') {
+                        {{ exercise.sets.length }} set{{ exercise.sets.length === 1 ? '' : 's' }} · cardio
+                      } @else {
+                        {{ exercise.sets.length }} sets
+                      }
+                    </span>
                   </div>
                 }
               </div>
@@ -395,11 +401,10 @@
                   <span class="lft-section-label">Reps</span>
                 }
                 @case ('DURATION') {
-                  <span class="lft-section-label">Duration (s)</span>
+                  <span class="lft-section-label">Duration (min)</span>
                 }
                 @case ('CARDIO') {
-                  <span class="lft-section-label">Duration (s)</span>
-                  <span class="lft-section-label">Dist ({{ store.distanceUnit() }})</span>
+                  <span class="lft-section-label">Duration (min)</span>
                   <span class="lft-section-label">Speed (km/h)</span>
                 }
               }
@@ -407,13 +412,15 @@
             </div>
 
             <!-- ── Set rows ───────────────────────────────────────── -->
-            <div class="divide-y divide-zinc-800/60">
+            <div class="divide-y-0">
               @for (set of exercise.sets; track set.id) {
-                <div
-                  class="grid items-center gap-x-2 px-3 py-2 transition-colors"
-                  [ngClass]="setGridCols(exercise.trackingType)"
-                  [class.lft-set-row-complete]="set.completed"
-                >
+                <div class="border-b border-zinc-800/60 last:border-b-0">
+                  <!-- Main set row -->
+                  <div
+                    class="grid items-center gap-x-2 px-3 py-2 transition-colors"
+                    [ngClass]="setGridCols(exercise.trackingType)"
+                    [class.lft-set-row-complete]="set.completed"
+                  >
                   <!-- Set number + previous reference -->
                   <div class="flex flex-col items-start justify-center">
                     <span class="text-xs font-bold leading-none" [class.text-zinc-500]="set.completed" [class.text-zinc-400]="!set.completed">{{ set.order }}</span>
@@ -468,9 +475,9 @@
                         [class.border-transparent]="set.completed"
                         [class.bg-transparent]="set.completed"
                       >
-                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, -5)" aria-label="Decrease duration by 5s">−</button>
-                        <input class="lft-set-input h-12 rounded-none border-0 text-sm" inputmode="numeric" type="number" min="0" [value]="set.durationSeconds" (focus)="selectAll($event)" (input)="store.setValue(exercise.id, set.id, 'durationSeconds', inputValue($event))" [attr.aria-label]="'Duration in seconds for set ' + set.order"/>
-                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, 5)" aria-label="Increase duration by 5s">+</button>
+                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, -60)" aria-label="Decrease duration by 1 minute">−</button>
+                        <input class="lft-set-input h-12 rounded-none border-0 text-sm" inputmode="numeric" type="number" min="0" step="1" [value]="durationToMinutes(set.durationSeconds)" (focus)="selectAll($event)" (input)="setDurationFromMinutes(exercise.id, set.id, $event)" [attr.aria-label]="'Duration in minutes for set ' + set.order"/>
+                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, 60)" aria-label="Increase duration by 1 minute">+</button>
                       </div>
                     }
 
@@ -482,17 +489,9 @@
                         [class.border-transparent]="set.completed"
                         [class.bg-transparent]="set.completed"
                       >
-                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, -30)" aria-label="Decrease duration by 30s">−</button>
-                        <input class="lft-set-input h-12 rounded-none border-0 text-sm" inputmode="numeric" type="number" min="0" [value]="set.durationSeconds" (focus)="selectAll($event)" (input)="store.setValue(exercise.id, set.id, 'durationSeconds', inputValue($event))" [attr.aria-label]="'Duration in seconds for set ' + set.order"/>
-                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, 30)" aria-label="Increase duration by 30s">+</button>
-                      </div>
-                      <!-- Distance -->
-                      <div
-                        class="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 transition-colors focus-within:border-teal-400/50"
-                        [class.border-transparent]="set.completed"
-                        [class.bg-transparent]="set.completed"
-                      >
-                        <input class="lft-set-input h-12 w-full border-0 text-sm" inputmode="decimal" type="number" min="0" placeholder="–" [value]="displayDistance(set.distanceKm)" (focus)="selectAll($event)" (input)="store.setValue(exercise.id, set.id, 'distanceKm', inputValue($event))" [attr.aria-label]="'Distance in ' + store.distanceUnit() + ' for set ' + set.order"/>
+                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, -60)" aria-label="Decrease duration by 1 minute">−</button>
+                        <input class="lft-set-input h-12 rounded-none border-0 text-sm" inputmode="numeric" type="number" min="0" step="1" [value]="durationToMinutes(set.durationSeconds)" (focus)="selectAll($event)" (input)="setDurationFromMinutes(exercise.id, set.id, $event)" [attr.aria-label]="'Duration in minutes for set ' + set.order"/>
+                        <button class="lft-stepper-btn hidden h-12 items-center justify-center text-sm font-bold text-zinc-400 hover:bg-zinc-800 active:bg-zinc-700 sm:flex" type="button" (click)="store.adjustDuration(exercise.id, set.id, 60)" aria-label="Increase duration by 1 minute">+</button>
                       </div>
                       <!-- Speed -->
                       <div
@@ -530,7 +529,31 @@
                     </button>
                   </div>
                 </div>
-              }
+
+                <!-- Optional distance row — only for CARDIO, sits below the main grid -->
+                @if (exercise.trackingType === 'CARDIO') {
+                  <div class="flex items-center gap-2 px-3 pb-2">
+                    <span class="w-[calc(2rem+0.5rem)] shrink-0 text-[10px] text-zinc-600">dist</span>
+                    <div
+                      class="flex h-8 flex-1 items-center overflow-hidden rounded-lg border border-zinc-800/60 bg-zinc-950/60 transition-colors focus-within:border-teal-400/40"
+                      [class.border-transparent]="set.completed"
+                      [class.bg-transparent]="set.completed"
+                    >
+                      <input
+                        class="lft-set-input h-full w-full border-0 text-xs"
+                        inputmode="decimal" type="number" min="0"
+                        [placeholder]="'optional · ' + store.distanceUnit()"
+                        [value]="displayDistance(set.distanceKm)"
+                        (focus)="selectAll($event)"
+                        (input)="store.setValue(exercise.id, set.id, 'distanceKm', inputValue($event))"
+                        [attr.aria-label]="'Distance in ' + store.distanceUnit() + ' for set ' + set.order + ' (optional)'"
+                      />
+                    </div>
+                    <span class="shrink-0 text-[10px] text-zinc-600">{{ store.distanceUnit() }}</span>
+                  </div>
+                }
+              </div>
+            }
             </div>
 
             <!-- ── Add set ─────────────────────────────────────── -->

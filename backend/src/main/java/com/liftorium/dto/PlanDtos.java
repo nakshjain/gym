@@ -1,5 +1,6 @@
 package com.liftorium.dto;
 
+import com.liftorium.entity.TrackingType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -11,15 +12,24 @@ public final class PlanDtos {
 
   private PlanDtos() {}
 
+  /**
+   * A planned set. Which field is populated depends on the exercise's TrackingType:
+   * <ul>
+   *   <li>WEIGHT_REPS / REPS_ONLY — {@code reps}</li>
+   *   <li>DURATION / CARDIO       — {@code durationSeconds}</li>
+   * </ul>
+   */
   public record PlanSetRequest(
-      @Min(1) @Max(100) int reps
+      @Min(1) @Max(100) Integer reps,
+      @Min(1) @Max(86400) Integer durationSeconds
   ) {}
 
   public record PlanExerciseRequest(
       @NotNull @Size(max = 50) String exerciseId,
       @NotNull @Size(max = 120) String exerciseName,
       @NotNull @Size(min = 1, max = 20) @Valid List<PlanSetRequest> sets,
-      @Min(0) @Max(50) int order
+      @Min(0) @Max(50) int order,
+      TrackingType trackingType
   ) {}
 
   public record PlanDayRequest(
@@ -36,14 +46,16 @@ public final class PlanDtos {
   ) {}
 
   public record PlanSetDto(
-      int reps
+      Integer reps,
+      Integer durationSeconds
   ) {}
 
   public record PlanExerciseDto(
       String exerciseId,
       String exerciseName,
       List<PlanSetDto> sets,
-      int order
+      int order,
+      TrackingType trackingType
   ) {}
 
   public record PlanDayDto(

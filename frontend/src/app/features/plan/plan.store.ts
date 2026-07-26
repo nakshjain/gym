@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { MuscleGroup, PlanDay, PlanTemplate, WorkoutPlan, emptyPlan } from './plan.models';
+import { MuscleGroup, PlanDay, PlanSet, PlanTemplate, TrackingType, WorkoutPlan, emptyPlan } from './plan.models';
 import { PlanService } from './plan.service';
 
 const STORAGE_KEY = 'liftorium_workout_plan';
@@ -165,13 +165,25 @@ export class PlanStore {
     this.afterMutation();
   }
 
-  addExercise(dayOfWeek: number, exercise: { exerciseId: string; exerciseName: string }): void {
+  addExercise(dayOfWeek: number, exercise: { exerciseId: string; exerciseName: string; trackingType: TrackingType }): void {
     this.plan.update((p) => ({
       ...p,
       days: p.days.map((d) => {
         if (d.dayOfWeek !== dayOfWeek) return d;
         const order = d.exercises.length;
-        return { ...d, exercises: [...d.exercises, { ...exercise, sets: [{ reps: 10 }], order }] };
+        return {
+          ...d,
+          exercises: [
+            ...d.exercises,
+            {
+              exerciseId: exercise.exerciseId,
+              exerciseName: exercise.exerciseName,
+              trackingType: exercise.trackingType,
+              sets: [defaultPlanSet(exercise.trackingType)],
+              order,
+            },
+          ],
+        };
       }),
     }));
     this.afterMutation();
@@ -235,7 +247,9 @@ export class PlanStore {
       days: p.days.map((d) => {
         if (d.dayOfWeek !== dayOfWeek) return d;
         const exercises = d.exercises.map((e, i) =>
-          i === exerciseIndex ? { ...e, sets: [...e.sets, { reps: 10 }] } : e,
+          i === exerciseIndex
+            ? { ...e, sets: [...e.sets, defaultPlanSet(e.trackingType)] }
+            : e,
         );
         return { ...d, exercises };
       }),
@@ -265,6 +279,22 @@ export class PlanStore {
         const exercises = d.exercises.map((e, i) =>
           i === exerciseIndex
             ? { ...e, sets: e.sets.map((s, si) => (si === setIndex ? { ...s, reps } : s)) }
+            : e,
+        );
+        return { ...d, exercises };
+      }),
+    }));
+    this.afterMutation();
+  }
+
+  updateSetDuration(dayOfWeek: number, exerciseIndex: number, setIndex: number, durationSeconds: number): void {
+    this.plan.update((p) => ({
+      ...p,
+      days: p.days.map((d) => {
+        if (d.dayOfWeek !== dayOfWeek) return d;
+        const exercises = d.exercises.map((e, i) =>
+          i === exerciseIndex
+            ? { ...e, sets: e.sets.map((s, si) => (si === setIndex ? { ...s, durationSeconds } : s)) }
             : e,
         );
         return { ...d, exercises };
@@ -306,4 +336,13 @@ export class PlanStore {
       return emptyPlan();
     }
   }
+}
+
+/** Returns the default PlanSet for a given tracking type. */
+function defaultPlanSet(trackingType: TrackingType): PlanSet {
+  if (trackingType === 'CARDIO' || trackingType === 'DURATION') {
+    // Stored in seconds; 300s = 5 min, displayed as "5" in the minutes input
+    return { reps: null, durationSeconds: 300 };
+  }
+  return { reps: 10, durationSeconds: null };
 }

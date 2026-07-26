@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../../core/api/api.config';
-import { PlanTemplate, WorkoutPlan } from './plan.models';
+import { PlanTemplate, TrackingType, WorkoutPlan } from './plan.models';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -10,12 +10,14 @@ interface ApiResponse<T> {
 }
 
 interface PlanSetPayload {
-  reps: number;
+  reps: number | null;
+  durationSeconds: number | null;
 }
 
 interface PlanExercisePayload {
   exerciseId: string;
   exerciseName: string;
+  trackingType: TrackingType;
   sets: PlanSetPayload[];
   order: number;
 }
@@ -33,10 +35,31 @@ interface PlanPayload {
   templateId: string | null;
 }
 
+interface PlanSetDto {
+  reps: number | null;
+  durationSeconds: number | null;
+}
+
+interface PlanExerciseDto {
+  exerciseId: string;
+  exerciseName: string;
+  trackingType: TrackingType | null;
+  sets: PlanSetDto[];
+  order: number;
+}
+
+interface PlanDayDto {
+  dayOfWeek: number;
+  label: string;
+  muscleGroups: string[];
+  exercises: PlanExerciseDto[];
+  rest: boolean;
+}
+
 interface PlanDto {
   id: string | null;
   templateId: string | null;
-  days: PlanDayPayload[];
+  days: PlanDayDto[];
   updatedAt: string | null;
 }
 
@@ -45,7 +68,7 @@ interface TemplateDto {
   name: string;
   shortName: string;
   description: string;
-  days: PlanDayPayload[];
+  days: PlanDayDto[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,7 +99,11 @@ export class PlanService {
         exercises: d.exercises.map((e) => ({
           exerciseId: e.exerciseId,
           exerciseName: e.exerciseName,
-          sets: e.sets.map((s) => ({ reps: s.reps })),
+          trackingType: e.trackingType,
+          sets: e.sets.map((s) => ({
+            reps: s.reps ?? null,
+            durationSeconds: s.durationSeconds ?? null,
+          })),
           order: e.order,
         })),
         rest: d.rest,
@@ -99,7 +126,11 @@ export class PlanService {
         exercises: (d.exercises ?? []).map((e) => ({
           exerciseId: e.exerciseId,
           exerciseName: e.exerciseName,
-          sets: (e.sets ?? []).map((s) => ({ reps: s.reps })),
+          trackingType: e.trackingType ?? 'WEIGHT_REPS',
+          sets: (e.sets ?? []).map((s) => ({
+            reps: s.reps ?? null,
+            durationSeconds: s.durationSeconds ?? null,
+          })),
           order: e.order,
         })),
         rest: d.rest,
@@ -120,7 +151,11 @@ export class PlanService {
         exercises: (d.exercises ?? []).map((e) => ({
           exerciseId: e.exerciseId,
           exerciseName: e.exerciseName,
-          sets: (e.sets ?? []).map((s) => ({ reps: s.reps })),
+          trackingType: e.trackingType ?? 'WEIGHT_REPS',
+          sets: (e.sets ?? []).map((s) => ({
+            reps: s.reps ?? null,
+            durationSeconds: s.durationSeconds ?? null,
+          })),
           order: e.order,
         })),
         rest: d.rest,

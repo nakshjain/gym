@@ -137,6 +137,7 @@ export class PlanPageComponent {
     this.store.addExercise(dayOfWeek, {
       exerciseId: exercise.id,
       exerciseName: exercise.name,
+      trackingType: exercise.trackingType,
     });
     this.closeExerciseSearch();
   }
@@ -156,12 +157,31 @@ export class PlanPageComponent {
     }
   }
 
+  protected onSetDurationChange(dayOfWeek: number, exerciseIndex: number, setIndex: number, value: string): void {
+    // Input is in minutes; store in seconds
+    const minutes = parseFloat(value);
+    if (minutes > 0 && minutes <= 1440) {
+      this.store.updateSetDuration(dayOfWeek, exerciseIndex, setIndex, Math.round(minutes * 60));
+    }
+  }
+
+  protected secondsToMinutes(seconds: number | null): number {
+    if (!seconds) return 0;
+    return Math.round(seconds / 60);
+  }
+
+  protected formatDuration(seconds: number | null): string {
+    if (!seconds) return '0 min';
+    const m = Math.floor(seconds / 60);
+    return `${m} min`;
+  }
+
   protected removeExercise(dayOfWeek: number, exerciseIndex: number): void {
     const day = this.store.getDay(dayOfWeek);
     const exercise = day.exercises[exerciseIndex];
 
-    // If exercise has >1 set or custom reps, require confirmation
-    if (exercise.sets.length > 1 || exercise.sets.some(s => s.reps !== 10)) {
+    // If exercise has >1 set or custom reps/duration, require confirmation
+    if (exercise.sets.length > 1 || exercise.sets.some(s => (s.reps != null && s.reps !== 10) || (s.durationSeconds != null && s.durationSeconds !== 300))) {
       this.pendingRemoval = {
         dayOfWeek,
         exerciseIndex,
